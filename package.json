@@ -1,0 +1,70 @@
+{
+  "name": "my-floating-me",
+  "displayName": "My Floating Me",
+  "description": "Your personal coding mascot companion — tracks stats, streaks, pomodoro, git status, and keeps you motivated!",
+  "version": "0.0.1",
+  "publisher": "jbsie",
+  "icon": "media/idle.png",
+  "engines": {
+    "vscode": "^1.120.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "extensionDependencies": [
+    "vscode.git"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "my-floating-me.startPomodoro",
+        "title": "🍅 Start Pomodoro",
+        "category": "Mascot"
+      },
+      {
+        "command": "my-floating-me.stopPomodoro",
+        "title": "🍅 Stop Pomodoro",
+        "category": "Mascot"
+      },
+      {
+        "command": "my-floating-me.resetStats",
+        "title": "📊 Reset Session Stats",
+        "category": "Mascot"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "mascotView",
+          "name": "My Floating Me"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.120.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "typescript-eslint": "^8.56.1",
+    "eslint": "^9.39.3",
+    "typescript": "^5.9.3",
+    "ts-loader": "^9.5.4",
+    "webpack": "^5.105.3",
+    "webpack-cli": "^6.0.1",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}
