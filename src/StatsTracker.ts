@@ -19,6 +19,7 @@ export interface PomodoroState {
 export class StatsTracker {
 
     private _stats: SessionStats;
+    private _stateStorage?: vscode.Memento;
     private _pomodoro: PomodoroState;
     private _pomodoroTimer?: ReturnType<typeof setInterval>;
     private _idleTimer?: ReturnType<typeof setTimeout>;
@@ -42,15 +43,39 @@ export class StatsTracker {
 
     private _lastMilestone = 0;
 
-    constructor() {
+    constructor(stateStorage?: vscode.Memento) {
+        this._stateStorage = stateStorage;
         const now = Date.now();
-        this._stats = {
-            linesAdded: 0,
-            saveCount: 0,
-            sessionStartTime: now,
-            streakStartTime: now,
-            codingDurationMs: 0
-        };
+
+        // Restore stats or set defaults
+        const savedStats = this._stateStorage?.get<SessionStats>('codingStats');
+        console.log('[StatsTracker] Constructor: restoring stats from storage:', savedStats);
+        if (savedStats) {
+            this._stats = {
+                linesAdded: savedStats.linesAdded ?? 0,
+                saveCount: savedStats.saveCount ?? 0,
+                sessionStartTime: savedStats.sessionStartTime ?? now,
+                streakStartTime: savedStats.streakStartTime ?? now,
+                codingDurationMs: savedStats.codingDurationMs ?? 0
+            };
+
+            // Re-calculate last milestone so it matches restored streak duration
+            const streakMinutes = Math.floor((now - this._stats.streakStartTime) / 60_000);
+            for (const milestone of StatsTracker.MILESTONES) {
+                if (streakMinutes >= milestone) {
+                    this._lastMilestone = milestone;
+                }
+            }
+        } else {
+            this._stats = {
+                linesAdded: 0,
+                saveCount: 0,
+                sessionStartTime: now,
+                streakStartTime: now,
+                codingDurationMs: 0
+            };
+        }
+
         this._pomodoro = {
             phase: 'off',
             remainingMs: 0,
@@ -222,6 +247,11 @@ export class StatsTracker {
     }
 
     private _emitStats() {
+        if (this._stateStorage) {
+            console.log('[StatsTracker] Saving stats to storage:', this._stats);
+            // Shallow clone the stats object to ensure Memento change detection picks it up correctly
+            this._stateStorage.update('codingStats', { ...this._stats });
+        }
         this._onStatsUpdate?.({ ...this._stats });
     }
 

@@ -54,3 +54,15 @@ Open the Command Palette (`Ctrl+Shift+P`) and type "Mascot":
 ## License
 
 MIT
+
+## Compile and Installation
+
+Run this to your terminal:
+
+**npx @vscode/vsce package**
+
+then it will generate file named **my-floating-me-0.0.1.vsix**
+
+run this to your folder where **my-floating-me-0.0.1.vsix** is located
+
+**code --install-extension my-floating-me-0.0.1.vsix**

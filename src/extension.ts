@@ -10,7 +10,7 @@ export function activate(
         context.extensionUri
     );
 
-    const tracker = new StatsTracker();
+    const tracker = new StatsTracker(context.globalState);
 
     // --- Register webview view ---
 
