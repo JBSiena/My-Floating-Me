@@ -28,6 +28,28 @@ export function activate(
         updateGitStatus(provider);
     });
 
+    // Connect interactive webview button callbacks
+    provider.onStartPomodoro(() => {
+        tracker.startPomodoro();
+        vscode.window.showInformationMessage(
+            '🍅 Pomodoro started!'
+        );
+    });
+
+    provider.onStopPomodoro(() => {
+        tracker.stopPomodoro();
+        vscode.window.showInformationMessage(
+            '🍅 Pomodoro stopped.'
+        );
+    });
+
+    provider.onResetStats(() => {
+        tracker.resetStats();
+        vscode.window.showInformationMessage(
+            '📊 Session stats reset.'
+        );
+    });
+
     // --- Typing companion ---
 
     context.subscriptions.push(
@@ -102,7 +124,7 @@ export function activate(
             () => {
                 tracker.startPomodoro();
                 vscode.window.showInformationMessage(
-                    '🍅 Pomodoro started! 25 minutes of focus.'
+                    '🍅 Pomodoro started!'
                 );
             }
         )

@@ -8,6 +8,9 @@ export class MascotViewProvider
 
     private _view?: vscode.WebviewView;
     private _onReadyCb?: () => void;
+    private _onStartPomodoroCb?: () => void;
+    private _onStopPomodoroCb?: () => void;
+    private _onResetStatsCb?: () => void;
 
     constructor(
         private readonly extensionUri: vscode.Uri
@@ -15,6 +18,18 @@ export class MascotViewProvider
 
     onReady(cb: () => void) {
         this._onReadyCb = cb;
+    }
+
+    onStartPomodoro(cb: () => void) {
+        this._onStartPomodoroCb = cb;
+    }
+
+    onStopPomodoro(cb: () => void) {
+        this._onStopPomodoroCb = cb;
+    }
+
+    onResetStats(cb: () => void) {
+        this._onResetStatsCb = cb;
     }
     
     resolveWebviewView(
@@ -32,11 +47,17 @@ export class MascotViewProvider
         webviewView.webview.html =
             this._getHtml(webviewView.webview);
 
-        // Webview JS sends "ready" when it initializes
+        // Webview JS sends messages when initializing or clicking buttons
         webviewView.webview.onDidReceiveMessage(
             (msg) => {
                 if (msg.type === 'ready') {
                     this._onReadyCb?.();
+                } else if (msg.type === 'startPomodoro') {
+                    this._onStartPomodoroCb?.();
+                } else if (msg.type === 'stopPomodoro') {
+                    this._onStopPomodoroCb?.();
+                } else if (msg.type === 'resetStats') {
+                    this._onResetStatsCb?.();
                 }
             }
         );
@@ -190,15 +211,16 @@ export class MascotViewProvider
             </div>
 
             <!-- Pomodoro timer -->
-            <div id="pomodoro-section" class="section hidden">
+            <div id="pomodoro-section" class="section">
                 <div class="section-header">
                     <svg class="icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 5.5V8.5L10 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 3H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                     <span id="pomodoro-label">Pomodoro</span>
                 </div>
-                <div id="pomodoro-timer" class="timer">25:00</div>
-                <div class="progress-bar-bg">
+                <div id="pomodoro-timer" class="timer hidden">25:00</div>
+                <div class="progress-bar-bg hidden">
                     <div id="pomodoro-bar" class="progress-bar"></div>
                 </div>
+                <button id="pomodoro-btn" class="btn btn-primary" style="margin-top: 6px; width: 100%;">🍅 Start Focus</button>
             </div>
 
             <!-- Session stats -->
@@ -221,6 +243,7 @@ export class MascotViewProvider
                         <span class="stat-label">Time</span>
                     </div>
                 </div>
+                <button id="reset-btn" class="btn btn-secondary" style="margin-top: 8px; width: 100%;">📊 Reset Stats</button>
             </div>
 
             <!-- Streak -->

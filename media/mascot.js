@@ -17,11 +17,13 @@
     const pomodoroLabel = document.getElementById("pomodoro-label");
     const pomodoroTimer = document.getElementById("pomodoro-timer");
     const pomodoroBar = document.getElementById("pomodoro-bar");
+    const pomodoroBtn = document.getElementById("pomodoro-btn");
 
     // Stats
     const statLines = document.getElementById("stat-lines");
     const statSaves = document.getElementById("stat-saves");
     const statTime = document.getElementById("stat-time");
+    const resetBtn = document.getElementById("reset-btn");
 
     // Streak
     const streakIcon = document.getElementById("streak-icon");
@@ -161,34 +163,39 @@
             case "pomodoro":
                 if (!pomodoroSection) break;
 
-                if (msg.value.phase === "off") {
-                    pomodoroSection.classList.add("hidden");
+                const isOff = msg.value.phase === "off";
+
+                if (isOff) {
+                    if (pomodoroTimer) pomodoroTimer.classList.add("hidden");
+                    if (pomodoroBar) pomodoroBar.parentElement.classList.add("hidden");
+                    if (pomodoroLabel) pomodoroLabel.textContent = "Pomodoro";
+                    if (pomodoroBtn) {
+                        pomodoroBtn.textContent = "🍅 Start Focus";
+                        pomodoroBtn.className = "btn btn-primary";
+                        pomodoroBtn.dataset.action = "start";
+                    }
                 } else {
-                    pomodoroSection.classList.remove("hidden");
-
-                    const isFocus = msg.value.phase === "focus";
-
-                    if (pomodoroLabel) {
-                        pomodoroLabel.textContent =
-                            isFocus ? "Focus" : "Break";
-                    }
-
                     if (pomodoroTimer) {
-                        pomodoroTimer.textContent =
-                            formatTimer(msg.value.remainingMs);
-                        pomodoroTimer.className =
-                            "timer " + msg.value.phase;
+                        pomodoroTimer.classList.remove("hidden");
+                        pomodoroTimer.textContent = formatTimer(msg.value.remainingMs);
+                        pomodoroTimer.className = "timer " + msg.value.phase;
                     }
-
                     if (pomodoroBar) {
+                        pomodoroBar.parentElement.classList.remove("hidden");
                         const pct = msg.value.totalMs > 0
-                            ? (msg.value.remainingMs /
-                               msg.value.totalMs) * 100
+                            ? (msg.value.remainingMs / msg.value.totalMs) * 100
                             : 0;
                         pomodoroBar.style.width = pct + "%";
-                        pomodoroBar.className =
-                            "progress-bar" +
-                            (isFocus ? "" : " break");
+                        const isFocus = msg.value.phase === "focus";
+                        pomodoroBar.className = "progress-bar" + (isFocus ? "" : " break");
+                    }
+                    if (pomodoroLabel) {
+                        pomodoroLabel.textContent = msg.value.phase === "focus" ? "Focus" : "Break";
+                    }
+                    if (pomodoroBtn) {
+                        pomodoroBtn.textContent = "🛑 Stop Timer";
+                        pomodoroBtn.className = "btn btn-secondary";
+                        pomodoroBtn.dataset.action = "stop";
                     }
                 }
                 break;
@@ -266,6 +273,24 @@
             }
         }
     }, 10000);
+
+    // --- Button Event Listeners ---
+    if (pomodoroBtn) {
+        pomodoroBtn.addEventListener("click", () => {
+            const action = pomodoroBtn.dataset.action || "start";
+            if (action === "start") {
+                vscode.postMessage({ type: "startPomodoro" });
+            } else {
+                vscode.postMessage({ type: "stopPomodoro" });
+            }
+        });
+    }
+
+    if (resetBtn) {
+        resetBtn.addEventListener("click", () => {
+            vscode.postMessage({ type: "resetStats" });
+        });
+    }
 
     // Tell extension we're ready to receive state
     vscode.postMessage({ type: 'ready' });

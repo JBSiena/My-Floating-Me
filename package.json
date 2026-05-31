@@ -41,6 +41,33 @@
           "name": "My Floating Me"
         }
       ]
+    },
+    "configuration": {
+      "title": "My Floating Me",
+      "properties": {
+        "my-floating-me.resetInterval": {
+          "type": "string",
+          "enum": [
+            "manual",
+            "daily",
+            "weekly"
+          ],
+          "default": "manual",
+          "description": "How often session stats should automatically reset."
+        },
+        "my-floating-me.pomodoroFocusDuration": {
+          "type": "integer",
+          "default": 25,
+          "minimum": 1,
+          "description": "Duration of Pomodoro focus sessions in minutes."
+        },
+        "my-floating-me.pomodoroBreakDuration": {
+          "type": "integer",
+          "default": 5,
+          "minimum": 1,
+          "description": "Duration of Pomodoro break sessions in minutes."
+        }
+      }
     }
   },
   "scripts": {

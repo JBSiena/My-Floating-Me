@@ -59,11 +59,16 @@ export class StatsTracker {
                 codingDurationMs: savedStats.codingDurationMs ?? 0
             };
 
-            // Re-calculate last milestone so it matches restored streak duration
-            const streakMinutes = Math.floor((now - this._stats.streakStartTime) / 60_000);
-            for (const milestone of StatsTracker.MILESTONES) {
-                if (streakMinutes >= milestone) {
-                    this._lastMilestone = milestone;
+            // Call auto-reset check on restored stats
+            const resetPerformed = this._checkAndAutoReset();
+
+            if (!resetPerformed) {
+                // Re-calculate last milestone so it matches restored streak duration
+                const streakMinutes = Math.floor((now - this._stats.streakStartTime) / 60_000);
+                for (const milestone of StatsTracker.MILESTONES) {
+                    if (streakMinutes >= milestone) {
+                        this._lastMilestone = milestone;
+                    }
                 }
             }
         } else {
@@ -109,6 +114,7 @@ export class StatsTracker {
     // --- Tracking ---
 
     recordTextChange(event: vscode.TextDocumentChangeEvent) {
+        this._checkAndAutoReset();
         for (const change of event.contentChanges) {
             // Count new lines added
             const newLines = change.text.split('\n').length - 1;
@@ -123,6 +129,7 @@ export class StatsTracker {
     }
 
     recordSave() {
+        this._checkAndAutoReset();
         this._stats.saveCount++;
         this._markActivity();
         this._emitStats();
@@ -174,10 +181,13 @@ export class StatsTracker {
     startPomodoro() {
         this.stopPomodoro();
 
+        const focusMs = this._getFocusDurationMs();
+        const breakMs = this._getBreakDurationMs();
+
         this._pomodoro = {
             phase: 'focus',
-            remainingMs: StatsTracker.FOCUS_MS,
-            totalMs: StatsTracker.FOCUS_MS
+            remainingMs: focusMs,
+            totalMs: focusMs
         };
 
         this._pomodoroTimer = setInterval(() => {
@@ -189,17 +199,19 @@ export class StatsTracker {
 
                 if (endedPhase === 'focus') {
                     // Switch to break
+                    const currentBreakMs = this._getBreakDurationMs();
                     this._pomodoro = {
                         phase: 'break',
-                        remainingMs: StatsTracker.BREAK_MS,
-                        totalMs: StatsTracker.BREAK_MS
+                        remainingMs: currentBreakMs,
+                        totalMs: currentBreakMs
                     };
                 } else {
                     // Break ended, back to focus
+                    const currentFocusMs = this._getFocusDurationMs();
                     this._pomodoro = {
                         phase: 'focus',
-                        remainingMs: StatsTracker.FOCUS_MS,
-                        totalMs: StatsTracker.FOCUS_MS
+                        remainingMs: currentFocusMs,
+                        totalMs: currentFocusMs
                     };
                 }
             }
@@ -253,6 +265,62 @@ export class StatsTracker {
             this._stateStorage.update('codingStats', { ...this._stats });
         }
         this._onStatsUpdate?.({ ...this._stats });
+    }
+
+    private _isSameDay(t1: number, t2: number): boolean {
+        const d1 = new Date(t1);
+        const d2 = new Date(t2);
+        return d1.getFullYear() === d2.getFullYear() &&
+               d1.getMonth() === d2.getMonth() &&
+               d1.getDate() === d2.getDate();
+    }
+
+    private _isSameWeek(t1: number, t2: number): boolean {
+        const d1 = new Date(t1);
+        const d2 = new Date(t2);
+        
+        const startOfWeek = (d: Date) => {
+            const result = new Date(d);
+            const day = result.getDay();
+            const diff = result.getDate() - day;
+            result.setDate(diff);
+            result.setHours(0, 0, 0, 0);
+            return result.getTime();
+        };
+        
+        return startOfWeek(d1) === startOfWeek(d2);
+    }
+
+    private _checkAndAutoReset(): boolean {
+        const now = Date.now();
+        const config = vscode.workspace.getConfiguration('my-floating-me');
+        const interval = config.get<string>('resetInterval', 'manual');
+
+        if (interval === 'daily' && !this._isSameDay(this._stats.sessionStartTime, now)) {
+            console.log('[StatsTracker] Auto-resetting stats (daily boundary passed)');
+            this.resetStats();
+            return true;
+        }
+
+        if (interval === 'weekly' && !this._isSameWeek(this._stats.sessionStartTime, now)) {
+            console.log('[StatsTracker] Auto-resetting stats (weekly boundary passed)');
+            this.resetStats();
+            return true;
+        }
+
+        return false;
+    }
+
+    private _getFocusDurationMs(): number {
+        const config = vscode.workspace.getConfiguration('my-floating-me');
+        const minutes = config.get<number>('pomodoroFocusDuration', 25);
+        return minutes * 60 * 1000;
+    }
+
+    private _getBreakDurationMs(): number {
+        const config = vscode.workspace.getConfiguration('my-floating-me');
+        const minutes = config.get<number>('pomodoroBreakDuration', 5);
+        return minutes * 60 * 1000;
     }
 
     dispose() {
