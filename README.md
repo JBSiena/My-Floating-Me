@@ -97,9 +97,3 @@ code --install-extension my-floating-me-0.0.1.vsix
 
 ### 4. Reload Window
 Inside VS Code, open the Command Palette (`Ctrl+Shift+P`) and run the **Developer: Reload Window** command to apply the newly compiled changes!
-
----
-
-## License
-
-MIT
